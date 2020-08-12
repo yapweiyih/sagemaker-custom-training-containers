@@ -24,7 +24,11 @@ vscode launch.json
             ]
         }
     ]
-}
+
+Hyperparameter tuning:
+metric_definitions = [{'Name': 'average test loss',
+                       'Regex': 'Test set: Average loss: ([0-9\\.]+)'}]
+
 
 """
 from sklearn.datasets import make_classification
@@ -67,6 +71,7 @@ class Net(nn.Module):
 
     def forward(self, x):
         x = self.fc1(x)
+        x = x.reshape(-1, 3)  # This is required to support single sample which will return shape (input_features,)
         output = F.log_softmax(x, dim=1)
         return output
 
@@ -81,11 +86,22 @@ def train(args, model, device, train_loader, optimizer, epoch):
         loss.backward()
         optimizer.step()
         if batch_idx % args.log_interval == 0:
+            # print(
+            #     "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+            #         epoch,
+            #         batch_idx * len(data),
+            #         len(train_loader.dataset),
+            #         100.0 * batch_idx / len(train_loader),
+            #         loss.item(),
+            #     )
+            # )
+
+            # Proper metrics output is import for hyperparameter tuning
             print(
-                "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+                "Train Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}".format(
                     epoch,
                     batch_idx * len(data),
-                    len(train_loader.dataset),
+                    len(train_loader.sampler),
                     100.0 * batch_idx / len(train_loader),
                     loss.item(),
                 )
@@ -128,6 +144,9 @@ def model_fn(model_dir):
 
 # Sagemaker
 def save_model(model, model_dir):
+    if model_dir is None:
+        print("Model is not saved, no model_dir is provided.")
+        return
     path = os.path.join(model_dir, "model.pth")
     torch.save(model.state_dict(), path)
 
@@ -157,7 +176,7 @@ def main(args):
     kwargs = {"num_workers": 8, "pin_memory": True} if use_cuda else {}
 
     input_features = 5
-    n_samples = 1000
+    n_samples = 5000
     dataset = MyDataset(n_samples, input_features, 3)
     train_len = int(n_samples * 0.7)
     test_len = n_samples - train_len
@@ -172,8 +191,7 @@ def main(args):
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
         # scheduler.step()
-
-    test(model, device, test_loader)
+        test(model, device, test_loader)
 
     if args.save_model:
         save_model(model, model_dir)
@@ -189,7 +207,7 @@ if __name__ == "__main__":
         "--batch-size", type=int, default=64, metavar="N", help="input batch size for training (default: 64)"
     )
     parser.add_argument("--lr", type=float, default=0.1, metavar="LR", help="learning rate (default: 1.0)")
-    parser.add_argument("--save-model", action="store_true", default=False, help="For Saving the current Model")
+    parser.add_argument("--save-model", action="store_true", default=True, help="For Saving the current Model")
     parser.add_argument(
         "--log-interval",
         type=int,

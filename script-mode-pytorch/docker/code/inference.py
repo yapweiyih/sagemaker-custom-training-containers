@@ -17,7 +17,7 @@ class Net(nn.Module):
 
 def model_fn(model_dir):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = Net()
+    model = Net(5)
     if torch.cuda.device_count() > 1:
         print("Gpu count: {}".format(torch.cuda.device_count()))
         model = nn.DataParallel(model)
