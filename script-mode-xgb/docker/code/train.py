@@ -71,7 +71,7 @@ def get_data(train_channel, validation_channel):
     return X_train, X_test, y_train, y_test
 
 
-def train(train_channel, validation_channel, model_dir):
+def train(train_channel, validation_channel, model_dir, epochs):
     """
     SM_CHANNEL does not contain backward slash:
         SM_CHANNEL_TRAIN=/opt/ml/input/data/train
@@ -96,7 +96,7 @@ def train(train_channel, validation_channel, model_dir):
         "max_depth": 5,
         "learning_rate": 0.0001,
         "objective": "multi:softprob",
-        "n_estimators": 100,
+        "n_estimators": epochs,
     }
 
     model = XGBClassifier(
@@ -126,6 +126,7 @@ def train(train_channel, validation_channel, model_dir):
         "eval_set": [(X_train, y_train), (X_test, y_test)],
     }
     model.fit(X_train, y_train, **fit_params)
+    # model.fit(X_train, y_train)
 
     # Evaluation
     preds = model.predict(X_test)
@@ -144,13 +145,15 @@ if __name__ == "__main__":
     parser.add_argument("--hp1", type=str)
     parser.add_argument("--hp2", type=int, default=50)
     parser.add_argument("--hp3", type=float, default=0.1)
+    parser.add_argument("--epochs", type=int, default=50)
 
     # This is a way to pass additional arguments when running as a script
     # and use sagemaker-containers defaults to set their values when not specified.
+    local_train = ""
     parser.add_argument("--train", type=str, default=os.getenv("SM_CHANNEL_TRAIN", None))
     parser.add_argument("--validation", type=str, default=os.getenv("SM_CHANNEL_VALIDATION", None))
     parser.add_argument("--model-dir", type=str, default=os.getenv("SM_MODEL_DIR", None))
 
     args = parser.parse_args()
     print(args)
-    train(args.train, args.validation, args.model_dir)
+    train(args.train, args.validation, args.model_dir, args.epochs)

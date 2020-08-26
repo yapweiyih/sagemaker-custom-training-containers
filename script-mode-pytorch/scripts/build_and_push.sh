@@ -14,7 +14,10 @@ docker build -f ../docker/Dockerfile -t $REPO_NAME ../docker
 docker tag $REPO_NAME $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME:latest
 
 # Login to ecr
-aws ecr get-login --no-include-email --region $REGION --registry-ids $ACCOUNT_ID | awk '{print $6}' | docker login -u AWS --password-stdin $SERVER
+# awscliv1
+# aws ecr get-login --no-include-email --region $REGION --registry-ids $ACCOUNT_ID | awk '{print $6}' | docker login -u AWS --password-stdin $SERVER
+# awscliv2
+aws ecr get-login-password | docker login --username AWS --password-stdin ${SERVER}
 
 aws ecr describe-repositories --repository-names $REPO_NAME || aws ecr create-repository --repository-name $REPO_NAME
 
