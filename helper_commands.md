@@ -42,7 +42,3 @@ estimator = Estimator(image_name='pytorch-audio-classification-byoc',
 
 estimator.fit()
 ```
-
-# Push script debug
-
-aws ecr get-login --no-include-email --registry-ids 763104351884 --region ap-southeast-1 | awk '{print $6}' | docker login -u AWS --password-stdin 763104351884.dkr.ecr.ap-southeast-1.amazonaws.com
