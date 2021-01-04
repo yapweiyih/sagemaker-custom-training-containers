@@ -26,10 +26,11 @@
 # The argument to this script is the image name. This will be used as the image on the local
 # machine and combined with the account and region to form the repository name for ECR.
 image=$1
-s3_model_location=${2:-s3://wy-sandbox-singapore/lease-plan/classic-model/${image}/input/model.tar.gz}
+s3_model_location=${2:-s3://wy-sandbox-singapore/sagemaker/model/${image}/input/model.tar.gz}
 sagemaker_service_role=${3:-AmazonSageMaker-ExecutionRole-20190405T234154}
 user=default
 endpoint_prefix='rtc360'
+
 
 # Check that the image name is provided
 if [ "$image" == "" ]
@@ -57,7 +58,9 @@ then
     exit 255
 fi
 
+######################################################################
 # STEP 2: CREATE THE DOCKER CONTAINER
+######################################################################
 
 # Get the region defined in the current configuration (default to us-east-1 if none defined)
 region=$(aws configure get region)
@@ -75,17 +78,18 @@ fi
 
 # Get the login command from ECR and execute it directly
 # $(aws ecr get-login --region ${region} --no-include-email --profile ${user} --registry-ids 520713654638)
-SERVER="${ACCOUNT_ID}.dkr.ecr.ap-southeast-1.amazonaws.com"
-aws ecr get-login-password --region ${region} --no-include-email --profile ${user} --registry-ids 520713654638) | docker login --username AWS --password-stdin ${SERVER}
+SERVER="${account}.dkr.ecr.ap-southeast-1.amazonaws.com"
+aws ecr get-login-password | docker login --username AWS --password-stdin ${SERVER}
+aws ecr get-login-password | docker login --username AWS --password-stdin "520713654638.dkr.ecr.ap-southeast-1.amazonaws.com"
 
 # Build the docker image locally with the image name.
 docker build -t ${image} .
-
 
 echo
 echo Docker image built ...
 
 docker tag ${image} ${fullname}
+
 
 # Push image to ECR with the full name
 docker push ${fullname}
@@ -93,9 +97,10 @@ docker push ${fullname}
 echo
 echo Docker image pushed ...
 
- 
-
+exit
+######################################################################
 # STEP 3: CREATE THE ENDPOINT
+######################################################################
 
 endpoint_name=${endpoint_prefix}'-'$(date '+%Y%m%d-%H%M%S')
 

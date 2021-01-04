@@ -11,6 +11,9 @@ fi
 ACCOUNT_ID=$1
 REGION=$2
 REPO_NAME=$3
+echo "ACCOUNT_ID: ${ACCOUNT_ID}"
+echo "REPO_NAME: ${REPO_NAME}"
+echo "REGION: ${REGION}"
 
 # Login to retrieve base container if needed
 # awscliv1 (deprecated)
@@ -21,7 +24,7 @@ aws ecr get-login-password | docker login --username AWS --password-stdin 763104
 
 # Build docker images
 echo "***Building images***"
-docker build -t $REPO_NAME ../docker
+docker build -q -t $REPO_NAME ../docker
 docker tag $REPO_NAME $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME:latest
 
 # Authenticate docker to ecr
