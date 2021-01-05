@@ -35,3 +35,11 @@ aws ecr describe-repositories --repository-names $REPO_NAME || aws ecr create-re
 echo "***Push to Repo***"
 docker push $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME:latest
 
+
+################################
+# Public ecr
+echo "***Create Repo***"
+aws ecr-public get-login-password --region $REGION | docker login --username AWS --password-stdin public.ecr.aws/i0z8o7s2
+aws ecr-public describe-repositories --repository-names $REPO_NAME || aws ecr-public create-repository --repository-name $REPO_NAME
+docker tag $REPO_NAME public.ecr.aws/i0z8o7s2/$REPO_NAME:latest
+docker push public.ecr.aws/i0z8o7s2/$REPO_NAME:latest
